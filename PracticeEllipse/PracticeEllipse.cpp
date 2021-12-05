@@ -1,44 +1,44 @@
-// PracticeEllipse.cpp : Defines the entry point for the application.
+// screen saver.cpp : Defines the entry point for the application.
 //
 
 #include "framework.h"
 #include "PracticeEllipse.h"
 
-#define MAX_LOADSTRING      100
-#define CMD_BUTTON_ELLIPS   1001
-#define TIMER               2001
+#define MAX_LOADSTRING 100
+#define CMD_SCREEN_SAVER 1000
 
 
-HINSTANCE   hInst;                                
-WCHAR       szTitle[MAX_LOADSTRING];                  
-WCHAR       szWindowClass[MAX_LOADSTRING];           
-HDC         dc;
-HPEN        drawpen, erase;
-COLORREF    bgColor;
 
-
+// Global Variables:
+HINSTANCE hInst;                                // current instance
+WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
+WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+HPEN pen;
+// Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-void                Ellipse();
+void Ellipse();
+RECT rect;
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+    _In_opt_ HINSTANCE hPrevInstance,
+    _In_ LPWSTR    lpCmdLine,
+    _In_ int       nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
-    
-   
 
+    // TODO: Place code here.
+
+    // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_PRACTICEELLIPSE, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
 
     // Perform application initialization:
-    if (!InitInstance (hInstance, nCmdShow))
+    if (!InitInstance(hInstance, nCmdShow))
     {
         return FALSE;
     }
@@ -57,96 +57,132 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
 
-    return (int) msg.wParam;
+    return (int)msg.wParam;
 }
 
+
+
+//
+//  FUNCTION: MyRegisterClass()
+//
+//  PURPOSE: Registers the window class.
+//
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
     WNDCLASSEXW wcex;
 
     wcex.cbSize = sizeof(WNDCLASSEX);
-    bgColor = RGB(200, 200, 200);
-    erase = CreatePen(PS_SOLID, 2, bgColor);
-    drawpen = CreatePen(PS_SOLID, 2, RGB(100, 200, 100));
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PRACTICEELLIPSE));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = CreateSolidBrush(bgColor);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_PRACTICEELLIPSE);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+
+    wcex.style = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc = WndProc;
+    wcex.cbClsExtra = 0;
+    wcex.cbWndExtra = 0;
+    wcex.hInstance = hInstance;
+    wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDC_PRACTICEELLIPSE));
+    wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wcex.hbrBackground = CreateSolidBrush(RGB(200,100,100));
+    wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_PRACTICEELLIPSE);
+    wcex.lpszClassName = szWindowClass;
+    wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
     return RegisterClassExW(&wcex);
 }
 
+//
+//   FUNCTION: InitInstance(HINSTANCE, int)
+//
+//   PURPOSE: Saves instance handle and creates main window
+//
+//   COMMENTS:
+//
+//        In this function, we save the instance handle in a global variable and
+//        create and display the main program window.
+//
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   hInst = hInstance; 
+    hInst = hInstance; // Store instance handle in our global variable
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, 0, 1500, 1000, nullptr, nullptr, hInstance, nullptr);
 
-   if (!hWnd)
-   {
-      return FALSE;
-   }
+    if (!hWnd)
+    {
+        return FALSE;
+    }
 
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
 
-   return TRUE;
+    return TRUE;
 }
 
-
-int x, y;
+//
+//  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
+//
+//  PURPOSE: Processes messages for the main window.
+//
+//  WM_COMMAND  - process the application menu
+//  WM_PAINT    - Paint the main window
+//  WM_DESTROY  - post a quit message and return
+//
+//
+int x;
+int y;
+bool xFlag;
+bool yFlag;
+int width;
+int height;
+HDC dc;
+HBRUSH brush;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
-    case WM_CREATE:
-    {
+
+    case WM_CREATE: {
+        GetClientRect(hWnd, &rect);
         dc = GetDC(hWnd);
-        SetTimer(hWnd, TIMER, 100, NULL);
-        x = 100;
-        y = 100;
-        Ellipse(dc, x, y, x + 10, y + 10);
+        x = 0;
+        y = 0;
+        xFlag = false;
+        yFlag = false;
+        width = 100;
+        height = 100;
+        SetTimer(hWnd, CMD_SCREEN_SAVER, 0, NULL);
         break;
     }
     case WM_TIMER: {
-        if (wParam == TIMER) {
-            SelectObject(dc, erase);
-            Ellipse(dc, x, y, x + 10, y + 10);
-            SelectObject(dc, drawpen);
-            x += 2;
-            Ellipse(dc, x, y, x + 10, y + 10);
-        }
+        Ellipse();
+
         break;
     }
-
     case WM_COMMAND:
+    {
+        int wmId = LOWORD(wParam);
+        // Parse the menu selections:
+        switch (wmId)
         {
-            int wmId = LOWORD(wParam);
-            // Parse the menu selections:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
+        case IDM_ABOUT:
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+            break;
+        case IDM_EXIT:
+            DestroyWindow(hWnd);
+            break;
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
         }
-        break;
+    }
+    break;
+    case WM_PAINT:
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+        // TODO: Add any drawing code that uses hdc here...
+        EndPaint(hWnd, &ps);
+    }
+    break;
     case WM_DESTROY:
-        ReleaseDC(hWnd, dc);
         PostQuitMessage(0);
         break;
     default:
@@ -177,4 +213,25 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 void Ellipse() {
     
+    pen = CreatePen(PS_SOLID, 2, RGB(200, 100, 100));
+    DeleteObject(brush);
+    brush = CreateSolidBrush(RGB(200, 100, 100));
+    SelectObject(dc, brush);
+    SelectObject(dc, pen);
+    Ellipse(dc, y - width / 2, x + height / 2, y + width / 2, x - height / 2);
+    DeleteObject(brush);
+    brush = CreateSolidBrush(RGB(250,250,0));
+    SelectObject(dc, brush);
+    if (x > rect.bottom - height) xFlag = true;
+    if (x < rect.top + height) xFlag = false;
+    if (y > rect.right - width) yFlag = true;
+    if (y < rect.left + width) yFlag = false;
+
+    if (yFlag) y -= 6;
+    else y += 6;
+
+    if (xFlag) x -= 6;
+    else x += 6;
+  
+    Ellipse(dc, y - width / 2, x + height / 2, y + width / 2, x - height / 2);
 }
